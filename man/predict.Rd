@@ -7,7 +7,7 @@
 \usage{
 \method{predict}{rqdist}(object, newdata, rearrange = TRUE)
 
-augment.rqdist(object, newdata, rearrange = TRUE)
+\method{augment}{rqdist}(object, newdata, rearrange = TRUE)
 }
 \arguments{
 \item{object}{Object of class "rqdist", returned from the

@@ -17,6 +17,7 @@ Imports:
     quantreg
 Suggests: 
     dplyr,
-    tibble
+    tibble,
+    broom
 Remotes: vincenzocoia/distplyr
 RoxygenNote: 6.1.1

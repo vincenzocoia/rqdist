@@ -14,7 +14,7 @@
 #' @export
 rqdist <- function(formula, data, ...) {
     model <- quantreg::rq(formula, data, tau = -1, ...)
-    class(model) <- c(class(model), "rqdist")
+    class(model) <- c("rqdist", class(model))
     model
 }
 
@@ -70,6 +70,7 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 }
 
 #' @rdname predict
+#' @import broom
 #' @export
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
     yhat <- predict.rqdist(object, newdata, rearrange)
