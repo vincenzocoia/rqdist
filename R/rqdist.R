@@ -1,16 +1,17 @@
 #' Linear Quantile Regression Process Distribution Model
-#' 
+#'
 #' Fits a quantile regression process model based on an
 #' assumption of linear conditional quantiles. A wrapper
 #' for \code{quantreg::rq()}.
-#' 
+#'
 #' @param formula An object of class "formula".
 #' @param data Data frame containing the data.
 #' @param ... Other parameters to pass to \code{quantreg::rq()},
 #' aside from the \code{tau} option.
-#' 
+#'
 #' @return An object of class "rqdist" that returns
 #' distributions of class "dst" from the distplyr package.
+#' @export
 rqdist <- function(formula, data, ...) {
     model <- quantreg::rq(formula, data, tau = -1, ...)
     class(model) <- c(class(model), "rqdist")
@@ -18,12 +19,12 @@ rqdist <- function(formula, data, ...) {
 }
 
 #' Predict Quantile Regression Distributions
-#' 
+#'
 #' Predict distributions from a Linear Quantile Regression
-#' Process Model. A wrapper around 
+#' Process Model. A wrapper around
 #' \code{quantreg::predict.rq.process()},
 #' bundling the distribution functions into a "dst" object.
-#' 
+#'
 #' @param object Object of class "rqdist", returned from the
 #' \code{rqdist()} function.
 #' @param newdata Data frame from which to make predictions.
@@ -36,6 +37,8 @@ rqdist <- function(formula, data, ...) {
 #' to each row of \code{newdata}, corresponding to the
 #' estimated distribution of the response given the covariates
 #' in \code{newdata}.
+#' @rdname predict
+#' @export
 predict.rqdist <- function(object, newdata, rearrange = TRUE) {
     if (nrow(newdata) == 0) return(list())
     Qhat <- quantreg::predict.rq.process(
@@ -66,8 +69,9 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
     out
 }
 
-#' Augment Quantile Regression Distribution Predictions
+#' @rdname predict
+#' @export
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
     yhat <- predict.rqdist(object, newdata, rearrange)
-    dplyr::mutate(newdata, .fitted = yhat)
+    dplyr::mutate(as_tibble(newdata), .fitted = yhat)
 }

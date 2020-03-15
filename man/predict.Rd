@@ -2,9 +2,12 @@
 % Please edit documentation in R/rqdist.R
 \name{predict.rqdist}
 \alias{predict.rqdist}
+\alias{augment.rqdist}
 \title{Predict Quantile Regression Distributions}
 \usage{
 \method{predict}{rqdist}(object, newdata, rearrange = TRUE)
+
+augment.rqdist(object, newdata, rearrange = TRUE)
 }
 \arguments{
 \item{object}{Object of class "rqdist", returned from the
@@ -26,7 +29,7 @@ in \code{newdata}.
 }
 \description{
 Predict distributions from a Linear Quantile Regression
-Process Model. A wrapper around 
+Process Model. A wrapper around
 \code{quantreg::predict.rq.process()},
 bundling the distribution functions into a "dst" object.
 }
