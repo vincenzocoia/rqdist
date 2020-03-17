@@ -18,6 +18,7 @@ Imports:
 Suggests: 
     dplyr,
     tibble,
-    broom
+    broom,
+    testthat
 Remotes: vincenzocoia/distplyr
 RoxygenNote: 6.1.1
