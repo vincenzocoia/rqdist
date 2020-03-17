@@ -40,6 +40,7 @@ rqdist <- function(formula, data, ...) {
 #' @rdname predict
 #' @export
 predict.rqdist <- function(object, newdata, rearrange = TRUE) {
+	if (missing(newdata)) newdata <- object$model
     if (nrow(newdata) == 0) return(list())
     Qhat <- quantreg::predict.rq.process(
         object, newdata, type = "Qhat", stepfun = TRUE
