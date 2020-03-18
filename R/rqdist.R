@@ -41,29 +41,42 @@ rqdist <- function(formula, data, ...) {
 #' @export
 predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 	if (missing(newdata)) newdata <- object$model
-    if (nrow(newdata) == 0) return(list())
+	n <- nrow(newdata)
+    if (n == 0) return(list())
     Qhat <- quantreg::predict.rq.process(
         object, newdata, type = "Qhat", stepfun = TRUE
     )
-    Fhat <- quantreg::predict.rq.process(
-        object, newdata, type = "Fhat", stepfun = TRUE
-    )
+    if (n == 1) Qhat <- list(Qhat)
+    pre_taus <- lapply(Qhat, stats::knots)
+    pre_heights <- lapply(Qhat, distplyr::plateaus)
+    if (rearrange) {
+    	Qhat <- lapply(Qhat, quantreg::rearrange)
+    }
+    post_taus <- lapply(Qhat, stats::knots)
+    post_heights <- lapply(Qhat, distplyr::plateaus)
+    Fhat <- list()
+    for (i in 1:n) {
+    	if (any(diff(pre_heights[[i]]) < 0) && !rearrange) {
+    		Fhat[[i]] <- NA
+    	} else {
+    		y <- post_heights[[i]][-c(1, length(post_heights[[i]]))]
+    		Fhat[[i]] <- stepfun(y, post_taus[[i]])
+    	}
+    }
+
     fhat <- quantreg::predict.rq.process(
         object, newdata, type = "fhat"
     )
-    if (rearrange) {
-        Qhat <- lapply(Qhat, quantreg::rearrange)
-        Fhat <- lapply(Fhat, quantreg::rearrange)
-    }
+    if (n == 1) fhat <- list(fhat)
     name <- "Linear Quantile Regression Process Distribution"
     if (rearrange) name <- paste(name, "(rearranged)")
     n <- length(Qhat)
     out <- list()
     for (i in 1:n) {
         out[[i]] <- distplyr::dst(
-            fun_cumu = Fhat,
-            fun_quant = Qhat,
-            fun_prob = fhat,
+            fun_cumu = Fhat[[i]],
+            fun_quant = Qhat[[i]],
+            fun_prob = fhat[[i]],
             name = name
         )
     }
@@ -74,6 +87,7 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 #' @import broom
 #' @export
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
+	if (missing(newdata)) newdata <- object$model
     yhat <- predict.rqdist(object, newdata, rearrange)
     dplyr::mutate(as_tibble(newdata), .fitted = yhat)
 }

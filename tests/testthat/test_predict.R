@@ -1,6 +1,3 @@
-library(testthat)
-library(rqdist)
-
 model <- rqdist(mpg ~ disp, data = mtcars)
 n <- nrow(mtcars)
 
@@ -13,7 +10,12 @@ test_that("model is an rq.process object", {
 	expect_identical(ncol(model$dsol), ncol(model$sol))
 })
 
-test_that("predictions are distributions ('dst' objects)", {
+test_that("predictions output proper classes", {
 	yhat <- predict(model)
-
+	expect_true(is.list(yhat))
+	expect_true(is_dst(yhat[[1]]))
+	newtib <- augment(model)
+	expect_true(tibble::is_tibble(newtib))
+	expect_true(".fitted" %in% names(newtib))
+	expect_equal(yhat, newtib$.fitted)
 })
