@@ -40,61 +40,66 @@ rqdist <- function(formula, data, ...) {
 #' @rdname predict
 #' @export
 predict.rqdist <- function(object, newdata, rearrange = TRUE) {
-	if (missing(newdata)) newdata <- object$model
+	if (missing(newdata)) {
+		newdata <- object$model
+	}
 	n <- nrow(newdata)
-    if (n == 0) return(list())
+    if (identical(n, 0L)) {
+    	return(list())
+    }
     Qhat <- quantreg::predict.rq.process(
         object, newdata, type = "Qhat", stepfun = TRUE
     )
-    if (n == 1) Qhat <- list(Qhat)
-    # qf should be left-continuous, but is made right-continuous.
+    if (identical(n, 1L)) {
+    	Qhat <- list(Qhat)
+    }
+    # qf should be left-continuous, but is made right-continuous
+    #   by predict.rq.process
     Qhat <- lapply(Qhat, distplyr::swap_step_continuity_direction)
     if (rearrange) {
     	Qhat <- lapply(Qhat, quantreg::rearrange)
     }
-    if (n == 1) {
-    	## This is needed until n==1 bug is fixed in next version of quantreg.
-    	newdata <- rbind(newdata, newdata)
-    	fhat <- quantreg::predict.rq.process(
-    		object, newdata, type = "fhat"
-    	)
-    	fhat <- fhat[[1]]
-    } else {
-    	fhat <- quantreg::predict.rq.process(
-    		object, newdata, type = "fhat"
-    	)
-    }
-    if (n == 1) fhat <- list(fhat)
-    name <- "Linear Quantile Regression Process Distribution"
-    if (rearrange) name <- paste(name, "(rearranged)")
+    # if (identical(n, 1L)) {
+    # 	## This is needed until n==1 bug is fixed in next version of quantreg.
+    # 	newdata <- rbind(newdata, newdata)
+    # 	fhat <- quantreg::predict.rq.process(
+    # 		object, newdata, type = "fhat"
+    # 	)
+    # 	fhat <- fhat[[1]]
+    # } else {
+    # 	fhat <- quantreg::predict.rq.process(
+    # 		object, newdata, type = "fhat"
+    # 	)
+    # }
+    # if (n == 1) fhat <- list(fhat)
+    # name <- "rqdist"
+    # if (rearrange) name <- paste(name, "(rearranged)")
     out <- list()
     for (i in 1:n) {
-    	out[[i]] <- stepqf_to_stepdst(Qhat[[i]], fun_prob = fhat[[i]], name = name)
+    	out[[i]] <- stepqf_to_dst(Qhat[[i]])
     }
     length(out) <- n
     out
 }
 
-#' Convert a Step Quantile Function to a Step Distribution
+#' Convert a Step Quantile Function to a Distribution
 #'
 #' @param stepqf Step function representing a quantile function.
-#' @param ... Other arguments to pass to the \code{stepdst} or
-#' \code{dst} function (for example, a density).
 #' @return Object of class "stepdst" from the \code{distplyr}
 #' package. If the step function provided has a portion that
 #' decreases, a distribution object ("dst") is still output,
 #' but only the quantile function is available.
-stepqf_to_stepdst <- function(stepqf, ...) {
+stepqf_to_dst <- function(stepqf, ...) {
 	taus <- stats::knots(stepqf)
 	y <- distplyr::plateaus(stepqf)
 	probs <- diff(c(0, taus, 1))
 	if (any(diff(y) < 0)) {
-		distplyr::dst(fun_cumu = NULL,
-					  fun_quant = stepqf,
-					  ...)
+		distplyr::new_dst(list(representations = list(fun_quant = stepqf)),
+						  variable = "discrete")
 	} else {
+		stopifnot(identical(length(y), length(probs)))
 		df <- data.frame(y = y, probs = probs)
-		distplyr::stepdst(y, data = df, weights = probs, ...)
+		distplyr::stepdst(y, data = df, weights = probs)
 	}
 }
 
@@ -105,6 +110,6 @@ stepqf_to_stepdst <- function(stepqf, ...) {
 #' @export
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
 	if (missing(newdata)) newdata <- object$model
-    yhat <- predict.rqdist(object, newdata, rearrange)
+    yhat <- predict(object, newdata, rearrange)
     dplyr::mutate(tibble::as_tibble(newdata), .fitted = yhat)
 }
