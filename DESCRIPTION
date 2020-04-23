@@ -21,4 +21,4 @@ Suggests:
     broom,
     testthat
 Remotes: vincenzocoia/distplyr
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0

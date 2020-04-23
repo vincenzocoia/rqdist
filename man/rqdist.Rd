@@ -4,12 +4,18 @@
 \alias{rqdist}
 \title{Linear Quantile Regression Process Distribution Model}
 \usage{
-rqdist(formula, data, ...)
+rqdist(formula, data, grid_n = Inf, ...)
 }
 \arguments{
 \item{formula}{An object of class "formula".}
 
 \item{data}{Data frame containing the data.}
+
+\item{grid_n}{Approximate the fitted distributions by
+evaluating the quantile function on an equally spaced
+grid of this many values. \code{Inf} (default) allows for
+the entire quantile function to be obtained, but may be
+slow when the dataset is large.}
 
 \item{...}{Other parameters to pass to \code{quantreg::rq()},
 aside from the \code{tau} option.}

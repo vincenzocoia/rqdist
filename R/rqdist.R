@@ -6,14 +6,24 @@
 #'
 #' @param formula An object of class "formula".
 #' @param data Data frame containing the data.
+#' @param grid_n Approximate the fitted distributions by
+#' evaluating the quantile function on an equally spaced
+#' grid of this many values. \code{Inf} (default) allows for
+#' the entire quantile function to be obtained, but may be
+#' slow when the dataset is large.
 #' @param ... Other parameters to pass to \code{quantreg::rq()},
 #' aside from the \code{tau} option.
 #'
 #' @return An object of class "rqdist" that returns
 #' distributions of class "dst" from the distplyr package.
 #' @export
-rqdist <- function(formula, data, ...) {
-    model <- quantreg::rq(formula, data, tau = -1, ...)
+rqdist <- function(formula, data, grid_n = Inf, ...) {
+	if (identical(grid_n, Inf)) {
+		model <- quantreg::rq(formula, data, tau = -1, ...)
+	} else {
+		tau <- (1:grid_n) / (grid_n + 1)
+		model <- quantreg::rq(formula, data, tau = tau, ...)
+	}
     class(model) <- c("rqdist", class(model))
     model
 }
@@ -47,17 +57,39 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
     if (identical(n, 0L)) {
     	return(list())
     }
-    Qhat <- quantreg::predict.rq.process(
-        object, newdata, type = "Qhat", stepfun = TRUE
-    )
-    if (identical(n, 1L)) {
-    	Qhat <- list(Qhat)
-    }
-    # qf should be left-continuous, but is made right-continuous
-    #   by predict.rq.process
-    Qhat <- lapply(Qhat, distplyr::swap_step_continuity_direction)
+	if (inherits(object, "rq.process")) {
+		Qhat <- quantreg::predict.rq.process(
+			object, newdata, type = "Qhat", stepfun = TRUE
+		)
+		if (identical(n, 1L)) {
+			Qhat <- list(Qhat)
+		}
+		# qf should be left-continuous, but is made right-continuous
+		#   by predict.rq.process
+		Qhat <- lapply(Qhat, distplyr::swap_step_continuity_direction)
+	} else {
+		tau <- object[["tau"]]
+		yhat <- quantreg::predict.rq(object, newdata)
+		n_tau <- length(tau)
+		if (identical(n_tau, 1L)) {
+			res <- lapply(yhat, distplyr::stepdst)
+			return(res)
+		} else {
+			Qhat <- apply(yhat, 1L, function(y) {
+				# dups <- duplicated(y)
+				dups <- logical(n_tau)
+				dups[n_tau] <- FALSE
+				for (i in seq_len(n_tau - 1L)) {
+					dups[[n_tau - i]] <- identical(y[[n_tau - i]], y[[n_tau - i + 1L]])
+				}
+				this_tau <- tau[!dups]
+				this_y <- y[!dups]
+				stats::stepfun(this_tau[-length(this_tau)], this_y, right = TRUE)
+			})
+		}
+	}
     if (rearrange) {
-    	Qhat <- lapply(Qhat, quantreg::rearrange)
+    	Qhat <- lapply(Qhat, quantreg::rearrange, xmin = 0, xmax = 1)
     }
     # if (identical(n, 1L)) {
     # 	## This is needed until n==1 bug is fixed in next version of quantreg.
