@@ -15,10 +15,11 @@ LazyData: true
 Imports: 
     distionary (>= 0.0.0.9000),
     quantreg,
-    broom
+    broom,
+    ellipsis
 Suggests: 
     tibble,
     testthat
 RoxygenNote: 7.1.2
-Remotes:  
+Remotes: 
     vincenzocoia/distionary

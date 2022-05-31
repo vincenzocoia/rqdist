@@ -5,7 +5,7 @@
 \alias{augment.rqdist}
 \title{Predict Quantile Regression Distributions}
 \usage{
-\method{predict}{rqdist}(object, newdata, rearrange = TRUE)
+\method{predict}{rqdist}(object, newdata, rearrange = TRUE, ...)
 
 \method{augment}{rqdist}(object, newdata, rearrange = TRUE)
 }
@@ -22,6 +22,8 @@ If \code{TRUE} (the default), uses the \code{quantreg::rearrange()} function
 to make these functions non-decreasing (and therefore a legitimate
 distribution). If \code{FALSE}, the quantile function is left as-is, and
 may not represent a legitimate distribution.}
+
+\item{...}{Not used.}
 }
 \value{
 List of distributions ("dst" objects) corresponding

@@ -45,13 +45,15 @@ rqdist <- function(formula, data, grid_n = Inf, ...) {
 #' to make these functions non-decreasing (and therefore a legitimate
 #' distribution). If \code{FALSE}, the quantile function is left as-is, and
 #' may not represent a legitimate distribution.
+#' @param ... Not used.
 #' @return List of distributions ("dst" objects) corresponding
 #' to each row of \code{newdata}, corresponding to the
 #' estimated distribution of the response given the covariates
 #' in \code{newdata}.
 #' @rdname predict
 #' @export
-predict.rqdist <- function(object, newdata, rearrange = TRUE) {
+predict.rqdist <- function(object, newdata, rearrange = TRUE, ...) {
+	ellipsis::check_dots_empty()
 	if (missing(newdata)) {
 		newdata <- object$model
 	}
@@ -97,6 +99,7 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 
 #' @rdname predict
 #' @importFrom broom augment
+#' @importFrom stats predict
 #' @export
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
 	if (missing(newdata)) newdata <- object$model

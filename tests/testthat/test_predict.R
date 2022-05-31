@@ -35,5 +35,5 @@ test_that("Distributions are discrete", {
 	expect_true(distionary::is_finite_dst(yhat_x2[[1]]))
 })
 
-rm(c("x", "y", "dat", "x1", "x2", "model", "yhat_proper",
-	 "yhat_x1", "yhat_x2", "yhat_raw"))
+rm("x", "y", "dat", "x1", "x2", "model", "yhat_proper",
+   "yhat_x1", "yhat_x2", "yhat_raw")
