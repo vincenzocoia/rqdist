@@ -52,9 +52,6 @@ rqdist <- function(formula, data, grid_n = Inf, ...) {
 #' @rdname predict
 #' @export
 predict.rqdist <- function(object, newdata, rearrange = TRUE) {
-	if (!rearrange) {
-		stop("rqdist does not yet support `rearrange = FALSE`")
-	}
 	if (missing(newdata)) {
 		newdata <- object$model
 	}
@@ -71,7 +68,7 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 		}
 		# qf should be left-continuous, but is made right-continuous
 		#   by predict.rq.process
-		Qhat <- lapply(Qhat, distplyr::swap_step_continuity_direction)
+		Qhat <- lapply(Qhat, swap_step_continuity_direction)
 	} else {
 		tau <- object[["tau"]]
 		yhat <- quantreg::predict.rq(object, newdata)
@@ -94,14 +91,12 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 	}
     if (rearrange) {
     	Qhat <- lapply(Qhat, quantreg::rearrange, xmin = 0, xmax = 1)
-    	lapply(Qhat, qf_stepfun_to_dst)
-    } else {
-    	# Will fill in later.
     }
+	lapply(Qhat, qf_stepfun_to_dst)
 }
 
 #' @rdname predict
-#' @import broom
+#' @importFrom broom augment
 #' @export
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
 	if (missing(newdata)) newdata <- object$model
@@ -112,3 +107,5 @@ augment.rqdist <- function(object, newdata, rearrange = TRUE) {
     }
     newdata
 }
+
+
