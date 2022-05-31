@@ -14,8 +14,8 @@
 #' @param ... Other parameters to pass to \code{quantreg::rq()},
 #' aside from the \code{tau} option.
 #'
-#' @return An object of class "rqdist" that returns
-#' distributions of class "dst" from the distplyr package.
+#' @return An object of class "rqdist".
+#' @seealso `predict.rqdist()`
 #' @export
 rqdist <- function(formula, data, grid_n = Inf, ...) {
 	if (identical(grid_n, Inf)) {
@@ -37,12 +37,14 @@ rqdist <- function(formula, data, grid_n = Inf, ...) {
 #'
 #' @param object Object of class "rqdist", returned from the
 #' \code{rqdist()} function.
-#' @param newdata Data frame from which to make predictions.
+#' @param newdata Data frame from which to make predictions. If empty,
+#' uses the training data.
 #' @param rearrange The linear assumption sometimes results in
 #' distributions with non-monotonic quantile functions and cdf's.
-#' If \code{TRUE}, uses the \code{quantreg::rearrange()} function
-#' to make these functions non-decreasing. If \code{FALSE},
-#' leaves the functions as-is.
+#' If \code{TRUE} (the default), uses the \code{quantreg::rearrange()} function
+#' to make these functions non-decreasing (and therefore a legitimate
+#' distribution). If \code{FALSE}, the quantile function is left as-is, and
+#' may not represent a legitimate distribution.
 #' @return List of distributions ("dst" objects) corresponding
 #' to each row of \code{newdata}, corresponding to the
 #' estimated distribution of the response given the covariates
@@ -50,6 +52,9 @@ rqdist <- function(formula, data, grid_n = Inf, ...) {
 #' @rdname predict
 #' @export
 predict.rqdist <- function(object, newdata, rearrange = TRUE) {
+	if (!rearrange) {
+		stop("rqdist does not yet support `rearrange = FALSE`")
+	}
 	if (missing(newdata)) {
 		newdata <- object$model
 	}
@@ -72,70 +77,28 @@ predict.rqdist <- function(object, newdata, rearrange = TRUE) {
 		yhat <- quantreg::predict.rq(object, newdata)
 		n_tau <- length(tau)
 		if (identical(n_tau, 1L)) {
-			res <- lapply(yhat, distplyr::stepdst)
-			return(res)
+			return(distionary::dst_degenerate(yhat))
 		} else {
 			Qhat <- apply(yhat, 1L, function(y) {
 				# dups <- duplicated(y)
-				dups <- logical(n_tau)
-				dups[n_tau] <- FALSE
-				for (i in seq_len(n_tau - 1L)) {
-					dups[[n_tau - i]] <- identical(y[[n_tau - i]], y[[n_tau - i + 1L]])
-				}
-				this_tau <- tau[!dups]
-				this_y <- y[!dups]
-				stats::stepfun(this_tau[-length(this_tau)], this_y, right = TRUE)
+				# dups <- logical(n_tau)
+				# for (i in seq_len(n_tau - 1L)) {
+				# 	dups[[n_tau - i]] <- identical(y[[n_tau - i]], y[[n_tau - i + 1L]])
+				# }
+				# this_tau <- tau[!dups]
+				# this_y <- y[!dups]
+				# stats::stepfun(this_tau[-length(this_tau)], this_y, right = TRUE)
+				stats::stepfun(c(0, tau, 1), c(NaN, y[1], y, NaN), right = TRUE)
 			})
 		}
 	}
     if (rearrange) {
     	Qhat <- lapply(Qhat, quantreg::rearrange, xmin = 0, xmax = 1)
+    	lapply(Qhat, qf_stepfun_to_dst)
+    } else {
+    	# Will fill in later.
     }
-    # if (identical(n, 1L)) {
-    # 	## This is needed until n==1 bug is fixed in next version of quantreg.
-    # 	newdata <- rbind(newdata, newdata)
-    # 	fhat <- quantreg::predict.rq.process(
-    # 		object, newdata, type = "fhat"
-    # 	)
-    # 	fhat <- fhat[[1]]
-    # } else {
-    # 	fhat <- quantreg::predict.rq.process(
-    # 		object, newdata, type = "fhat"
-    # 	)
-    # }
-    # if (n == 1) fhat <- list(fhat)
-    # name <- "rqdist"
-    # if (rearrange) name <- paste(name, "(rearranged)")
-    out <- list()
-    for (i in 1:n) {
-    	out[[i]] <- stepqf_to_dst(Qhat[[i]])
-    }
-    length(out) <- n
-    out
 }
-
-#' Convert a Step Quantile Function to a Distribution
-#'
-#' @param stepqf Step function representing a quantile function.
-#' @return Object of class "stepdst" from the \code{distplyr}
-#' package. If the step function provided has a portion that
-#' decreases, a distribution object ("dst") is still output,
-#' but only the quantile function is available.
-stepqf_to_dst <- function(stepqf, ...) {
-	taus <- stats::knots(stepqf)
-	y <- distplyr::plateaus(stepqf)
-	probs <- diff(c(0, taus, 1))
-	if (any(diff(y) < 0)) {
-		distplyr::new_dst(list(representations = list(fun_quant = stepqf)),
-						  variable = "discrete")
-	} else {
-		stopifnot(identical(length(y), length(probs)))
-		df <- data.frame(y = y, probs = probs)
-		distplyr::stepdst(y, data = df, weights = probs)
-	}
-}
-
-
 
 #' @rdname predict
 #' @import broom
@@ -143,5 +106,9 @@ stepqf_to_dst <- function(stepqf, ...) {
 augment.rqdist <- function(object, newdata, rearrange = TRUE) {
 	if (missing(newdata)) newdata <- object$model
     yhat <- predict(object, newdata, rearrange)
-    dplyr::mutate(tibble::as_tibble(newdata), .fitted = yhat)
+    newdata[[".fitted"]] <- yhat
+    if (requireNamespace("tibble", quietly = TRUE)) {
+    	newdata <- tibble::as_tibble(newdata)
+    }
+    newdata
 }
