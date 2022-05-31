@@ -21,11 +21,13 @@ slow when the dataset is large.}
 aside from the \code{tau} option.}
 }
 \value{
-An object of class "rqdist" that returns
-distributions of class "dst" from the distplyr package.
+An object of class "rqdist".
 }
 \description{
 Fits a quantile regression process model based on an
 assumption of linear conditional quantiles. A wrapper
 for \code{quantreg::rq()}.
+}
+\seealso{
+`predict.rqdist()`
 }

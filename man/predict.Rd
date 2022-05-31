@@ -13,13 +13,15 @@
 \item{object}{Object of class "rqdist", returned from the
 \code{rqdist()} function.}
 
-\item{newdata}{Data frame from which to make predictions.}
+\item{newdata}{Data frame from which to make predictions. If empty,
+uses the training data.}
 
 \item{rearrange}{The linear assumption sometimes results in
 distributions with non-monotonic quantile functions and cdf's.
-If \code{TRUE}, uses the \code{quantreg::rearrange()} function
-to make these functions non-decreasing. If \code{FALSE},
-leaves the functions as-is.}
+If \code{TRUE} (the default), uses the \code{quantreg::rearrange()} function
+to make these functions non-decreasing (and therefore a legitimate
+distribution). If \code{FALSE}, the quantile function is left as-is, and
+may not represent a legitimate distribution.}
 }
 \value{
 List of distributions ("dst" objects) corresponding

@@ -8,17 +8,17 @@ Description: Produces distributional forecasts using a linear quantile
     regression process model. That is, by fitting a linear quantile
     regression for all quantile levels between 0 and 1. Essentially
     a wrapper around the quantreg package, giving predictive outputs
-    as distribution ("dst") objects from the "distplyr" package.
-License: GPL-3
+    as distribution ("dst") objects from the "distionary" package.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    distplyr (>= 0.1.0),
+    distionary (>= 0.0.0.9000),
     quantreg
 Suggests: 
-    dplyr,
     tibble,
     broom,
     testthat
-Remotes: vincenzocoia/distplyr
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.2
+Remotes:  
+    vincenzocoia/distionary
